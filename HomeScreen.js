@@ -1,100 +1,125 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, Image, Animated, TextInput, FlatList, Modal, Button } from 'react-native';
-import Sidebar from './Sidebar';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, Image, Animated, TextInput, FlatList, Modal, Button} from 'react-native';
+import Sidebar from './Sidebar'; // Import the Sidebar component
+
+const API_URL = "http://192.168.100.9/ict132/api/v3/index.php";
 
 const HomeScreen = ({ navigation }) => {
   const [totalSeconds, setTotalSeconds] = useState(1500);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [isWorkSession, setIsWorkSession] = useState(true);
-  const [workDuration, setWorkDuration] = useState(1500);
-  const [breakDuration, setBreakDuration] = useState(300);
-
-  const [tempWorkDuration, setTempWorkDuration] = useState(25);
-  const [tempBreakDuration, setTempBreakDuration] = useState(5);
-  const [isEditModalVisible, setEditModalVisible] = useState(false);
-
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState('');
   const [isModalVisible, setModalVisible] = useState(false);
-  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
-  const slideAnim = useRef(new Animated.Value(0)).current;
+
 
   useEffect(() => {
+    // Fetch tasks from API
+    fetch(API_URL)
+      .then((response) => response.json())
+      .then((json) => setTasks(json)) // Update tasks state with fetched data
+      .catch((error) => console.error(error));
+    
     let timer;
-    if (isTimerRunning && totalSeconds > 0) {
-      timer = setInterval(() => setTotalSeconds(prev => prev - 1), 1000);
-    } else if (totalSeconds <= 0) {
-      clearInterval(timer);
-      setIsWorkSession(!isWorkSession);
-      setTotalSeconds(isWorkSession ? breakDuration : workDuration);
-      setIsTimerRunning(false);
+    // Update the timer every second
+    if (isTimerRunning) {
+      timer = setInterval(() => {
+        setTotalSeconds((prevSeconds) => prevSeconds - 1);
+      }, 1000);
     }
+    // Clear the timer when the component unmounts
     return () => clearInterval(timer);
-  }, [isTimerRunning, totalSeconds, isWorkSession, workDuration, breakDuration]);
+  }, [isTimerRunning]); // Empty dependency array to run the effect only once when the component mounts
 
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
 
-  const toggleEditModal = () => {
-    setEditModalVisible(!isEditModalVisible);
+  const toggleModal = () => {
+    setModalVisible(!isModalVisible);
   };
 
-  const saveNewDurations = () => {
-    setWorkDuration(tempWorkDuration * 60);
-    setBreakDuration(tempBreakDuration * 60);
-    setEditModalVisible(false);
+
+  const handleStartButton = () => {
+    setIsTimerRunning(true);
   };
 
-  const handleTimerPress = () => {
-    setTempWorkDuration(workDuration / 60);
-    setTempBreakDuration(breakDuration / 60);
-    toggleEditModal();
+  const handlePauseButton = () => {
+    setIsTimerRunning(false);
   };
 
-  const handleStartButton = () => setIsTimerRunning(true);
-  const handlePauseButton = () => setIsTimerRunning(false);
   const handleStopButton = () => {
     setIsTimerRunning(false);
-    setTotalSeconds(workDuration);
-    setIsWorkSession(true);
+    setTotalSeconds(1500); // Reset the timer to the initial value
   };
-
+  
   const handleAddTaskButton = () => {
+    fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        task_name: newTask,
+      }),
+    })
+      .then((response) => response.json())
+      .then((json) => {
+        if (json.message === 'Task added') {
+          setTasks([...tasks, { task_name: newTask }]);
+        }
+      })
+      .catch((error) => console.error(error));
+
+    console.log('handleAddTaskButton called'); // Add this line
+    console.log('New Task Value:', newTask); // Add this line
+
     if (newTask.trim() !== '') {
-      setTasks([...tasks, { id: Date.now().toString(), text: newTask, completed: false }]);
+      console.log('Adding task:', newTask);
+      setTasks((prevTasks) => [
+        ...(Array.isArray(prevTasks) ? prevTasks : []),
+        { id: Number(Date.now()).toString(), text: newTask || '', completed: false },
+      ]);                
       setNewTask('');
     }
-    setModalVisible(false);
+    setModalVisible(!isModalVisible);
   };
-
+  
   const handleCheckButton = (taskId) => {
-    setTasks(tasks.map(task => task.id === taskId ? { ...task, completed: !task.completed } : task));
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === taskId ? { ...task, completed: !task.completed } : task
+      )
+    );
   };
 
   const handleDeleteButton = (taskId) => {
-    setTasks(tasks.filter(task => task.id !== taskId));
+    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
   };
+
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   const toggleSidebar = () => {
-    Animated.timing(slideAnim, {
-      toValue: isSidebarVisible ? 0 : 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => setIsSidebarVisible(!isSidebarVisible));
-  };
+    const toValue = isSidebarVisible ? 0 : 1;
 
-  const toggleModal = () => setModalVisible(!isModalVisible);
+    Animated.timing(slideAnim, {
+      toValue,
+      duration: 100, // Adjust the duration as needed
+      useNativeDriver: false,
+    }).start(() => {
+      setIsSidebarVisible((prev) => !prev);
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#E0F0FF" barStyle="dark-content" />
+
 
       <View style={styles.mainContent}>
-        <Text style={styles.PomodoroText}>Pomodoro</Text>
-        <TouchableOpacity style={styles.timeContainer} onPress={handleTimerPress}>
+        <Text style = {styles.PomodoroText}>Pomodoro</Text>
+        <StatusBar backgroundColor="#E0F0FF" barStyle="dark-content" />
+        <View style={styles.timeContainer}>
           <Text style={styles.timer}>{`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`}</Text>
-        </TouchableOpacity>
-
+        </View>
         <View style={styles.timeButtons}>
           <TouchableOpacity style={styles.Button} onPress={handleStartButton}>
             <Text style={styles.buttonText}>Start</Text>
@@ -108,91 +133,90 @@ const HomeScreen = ({ navigation }) => {
         </View>
 
         <View style={styles.taskMainContainer}>
-          <View style={styles.TaskView}>
-            <Text style={styles.TaskMainTitle}>Tasks</Text>
-            <TouchableOpacity style={styles.AddButton} onPress={toggleModal}>
-              <Image source={require('./whale.png')} style={styles.AddIcon} />
-            </TouchableOpacity>
-          </View>
+        <View style={styles.TaskView}>
+        <Text style={styles.TaskMainTitle}>Tasks</Text>
+        <View style={styles.AddButtonContainer}>
+        <TouchableOpacity style={styles.AddButton} onPress={toggleModal}>
+        <Image source={require('./whale.png')} style={styles.AddIcon} />
+      </TouchableOpacity>
 
-          <FlatList
-            style={styles.flatList}
-            data={tasks}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.taskItem}>
-                <Text style={[styles.taskText, { textDecorationLine: item.completed ? 'line-through' : 'none' }]}>{item.text}</Text>
-                <TouchableOpacity onPress={() => handleCheckButton(item.id)}>
-                  <Text>{item.completed ? 'Uncheck' : 'Check'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDeleteButton(item.id)}>
-                  <Text>Delete</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          />
-        </View>
-      </View>
-
+      {/* Modal */}
       <Modal
-        animationType="slide"
+        animationType="slide" // You can customize the animation type
         transparent={true}
         visible={isModalVisible}
-        onRequestClose={toggleModal}
+        onRequestClose={() => {
+          setModalVisible(!isModalVisible);
+        }}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <TextInput style={styles.input} value={newTask} onChangeText={setNewTask} placeholder="Enter task..." />
+          <TextInput 
+            style={styles.input}
+            value={newTask}
+            onChangeText={(text) => setNewTask(text)}
+            placeholder="Enter task..."
+          />
             <TouchableOpacity style={styles.AddButton} onPress={handleAddTaskButton}>
               <Image source={require('./whale.png')} style={styles.AddIcon} />
             </TouchableOpacity>
+            {/* Button to close the modal */}
             <Button title="Close" onPress={toggleModal} />
+            
           </View>
         </View>
       </Modal>
- 
-      {/*Animation for SideBar*/}        
+            
+
+        </View>
+        </View>
+
+      
+
+
+        
+          <FlatList
+          style={styles.flatList}
+          data={tasks}
+          keyExtractor={(item) => item.id ? item.id.toString() : ''}
+          renderItem={({ item }) => (
+            <View style={styles.taskItem}>
+              <Text
+                style={[
+                  styles.taskText,
+                  { textDecorationLine: item.completed ? 'line-through' : 'none' },
+                ]}
+              >
+                {item.text}
+              </Text>
+              <TouchableOpacity onPress={() => handleCheckButton(item.id)}>
+                <Text>{item.completed ? 'Uncheck' : 'Check'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleDeleteButton(item.id)}>
+                <Text>Delete</Text>
+              </TouchableOpacity>
+              </View>
+          )}
+        />
+        </View>
+        
+      </View>
+
       <Animated.View style={[styles.sidebarContainer, { transform: [{ translateX: slideAnim.interpolate({ inputRange: [0, 2], outputRange: [-300, 0] }) }] }]}>
     {   isSidebarVisible && <Sidebar navigation={navigation} />}
       </Animated.View>
+
 
       <TouchableOpacity style={styles.sidebarButton} onPress={toggleSidebar}>
         <Image source={require('./menu-icon.png')} style={styles.whale} />
       </TouchableOpacity>
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isEditModalVisible}
-        onRequestClose={toggleEditModal}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <TextInput
-              style={styles.input}
-              value={tempWorkDuration.toString()}
-              onChangeText={(text) => setTempWorkDuration(Number(text))}
-              keyboardType="numeric"
-              placeholder="Work Duration (minutes)"
-            />
-            <TextInput
-              style={styles.input}
-              value={tempBreakDuration.toString()}
-              onChangeText={(text) => setTempBreakDuration(Number(text))}
-              keyboardType="numeric"
-              placeholder="Break Duration (minutes)"
-            />
-            <Button title="Save" onPress={saveNewDurations} />
-            <Button title="Close" onPress={toggleEditModal} />
-          </View>
-        </View>
-      </Modal>
+      {/* Button to trigger the modal */}
+      
+
     </SafeAreaView>
   );
 };
-
-
-
 
 const styles = StyleSheet.create({
   container: {

@@ -1,0 +1,1 @@
+export const API_URL = "http://192.168.100.9/ict132/api/v3/"
