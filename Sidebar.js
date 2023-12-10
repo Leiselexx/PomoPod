@@ -7,16 +7,23 @@ import SidebarItem from './sidebarItem'; // Adjust the path based on your file s
 const Sidebar = ({ navigation }) => {
   const [isPressedHome, setIsPressedHome] = useState(false);
   const [isPressedLogin, setIsPressedLogin] = useState(false);
+  const [isPressedNotes, setIsPressedNotes] = useState(false);
+
 
   const handleSidebarItemPress = (screenName) => {
     if (screenName === 'HomeScreen') {
       setIsPressedHome(true);
       setIsPressedLogin(false); // Reset the other button
+      setIsPressedNotes(false);
     } else if (screenName === 'LoginScreen') {
       setIsPressedHome(false); // Reset the other button
+      setIsPressedNotes(false);
       setIsPressedLogin(true);
+    }else if (screenName === 'NotesScreen') {
+      setIsPressedNotes(true); // Reset the other button
+      setIsPressedLogin(false);
+      setIsPressedHome(false); 
     }
-
     navigation.navigate(screenName);
   };
 
@@ -36,6 +43,13 @@ const Sidebar = ({ navigation }) => {
         isPressed={isPressedLogin}
         icon={require('./whale.png')}
         label="Log Out"
+      />
+
+      <SidebarItem
+        onPress={() => handleSidebarItemPress('NotesScreen')}
+        isPressed={isPressedNotes}
+        icon={require('./whale.png')}
+        label="Notes"
       />
 
       {/* Add more SidebarItems as needed */}

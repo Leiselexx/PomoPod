@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from './LoginScreen.js';
 import HomeScreen from './HomeScreen.js';
+import NotesScreen from './NotesScreen.js';
 import Sidebar from './Sidebar'; // Import the Sidebar component
 
 
@@ -33,6 +34,7 @@ export default function App() {
           <>
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="HomeScreen" component={HomeScreen} />
+          <Stack.Screen name="NotesScreen" component={NotesScreen} /> 
           </>
         )}
       </Stack.Navigator>
