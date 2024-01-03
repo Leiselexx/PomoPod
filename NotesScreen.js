@@ -14,6 +14,15 @@ const NotesScreen = () => {
     const [isModalVisible, setModalVisible] = useState(false);
     const [editText, setEditText] = useState('');
 
+    const addNewNote = () => {
+        const newNote = {
+            id: Date.now().toString(), // Unique ID based on the current timestamp
+            text: 'New Note' // Default text for a new note
+        };
+        setNotes([...notes, newNote]);
+    };
+    
+
     const handleNotePress = (note) => {
         setSelectedNote(note);
         setEditText(note.text);
@@ -54,8 +63,18 @@ const NotesScreen = () => {
                     <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                         <Text>Save</Text>
                     </TouchableOpacity>
+
+                    
+
                 </View>
             </Modal>
+
+            <View style={styles.modalView}>
+            <TouchableOpacity style={styles.addButton} onPress={addNewNote}>
+                <Text>Add Note</Text>
+            </TouchableOpacity>
+
+            </View>
 
             {/* Add a button or method to create new notes */}
         </View>
@@ -98,6 +117,13 @@ const styles = StyleSheet.create({
         padding: 10,
         marginTop: 20,
     },
+    addButton: {
+        backgroundColor: 'green',
+        padding: 10,
+        margin: 10,
+        alignItems: 'center',
+    },
+    
 });
 
 export default NotesScreen;
