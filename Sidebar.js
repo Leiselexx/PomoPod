@@ -38,18 +38,20 @@ const Sidebar = ({ navigation }) => {
         label="Study Timer"
       />
 
-      <SidebarItem
-        onPress={() => handleSidebarItemPress('LoginScreen')}
-        isPressed={isPressedLogin}
-        icon={require('./whale.png')}
-        label="Log Out"
-      />
+    
 
       <SidebarItem
         onPress={() => handleSidebarItemPress('NotesScreen')}
         isPressed={isPressedNotes}
         icon={require('./whale.png')}
         label="Notes"
+      />
+
+<SidebarItem
+        onPress={() => handleSidebarItemPress('LoginScreen')}
+        isPressed={isPressedLogin}
+        icon={require('./whale.png')}
+        label="Log Out"
       />
 
       {/* Add more SidebarItems as needed */}
