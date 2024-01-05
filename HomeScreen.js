@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, Image, Animated, TextInput, FlatList, Modal, Button} from 'react-native';
 import Sidebar from './Sidebar'; // Import the Sidebar component
 
-const API_URL = "http://192.168.100.9/ict132/api/v3/index.php";
+const API_URL = "http://192.168.100.88/ict132/api/v3/index.php";
 
 const HomeScreen = ({ navigation }) => {
   const [totalSeconds, setTotalSeconds] = useState(1500);
@@ -92,9 +92,33 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  const handleDeleteButton = (taskId) => {
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
-  };
+  const handleDeleteButton = (taskName) => {
+    fetch(API_URL, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        task_name: taskName,
+      }),
+    })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Network response was not ok, status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((json) => {
+      if (json.message === 'Task deleted') {
+        console.log(`Task with task_name ${taskName} deleted successfully from the database.`);
+        setTasks((prevTasks) => prevTasks.filter((task) => task.task_name !== taskName));
+      } else {
+        console.log(`Task deletion failed for task_name ${taskName}. Server message: ${json.message}`);
+      }
+    })
+    .catch((error) => console.error(error));
+  };  
+
 
   const slideAnim = useRef(new Animated.Value(0)).current;
 
@@ -178,7 +202,7 @@ const HomeScreen = ({ navigation }) => {
           <FlatList
           style={styles.flatList}
           data={tasks}
-          keyExtractor={(item) => item.id ? item.id.toString() : ''}
+          keyExtractor={(item) => item.task_name ? item.task_name.toString() : ''}
           renderItem={({ item }) => (
             <View style={styles.taskItem}>
               <Text
@@ -187,12 +211,12 @@ const HomeScreen = ({ navigation }) => {
                   { textDecorationLine: item.completed ? 'line-through' : 'none' },
                 ]}
               >
-                {item.text}
+                {item.task_name}
               </Text>
-              <TouchableOpacity onPress={() => handleCheckButton(item.id)}>
+              <TouchableOpacity onPress={() => handleCheckButton(item.task_name)}>
                 <Text>{item.completed ? 'Uncheck' : 'Check'}</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeleteButton(item.id)}>
+              <TouchableOpacity onPress={() => handleDeleteButton(item.task_name)}>
                 <Text>Delete</Text>
               </TouchableOpacity>
               </View>
